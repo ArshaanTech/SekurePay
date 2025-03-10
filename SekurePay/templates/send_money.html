@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Send Money - Dark Theme</title>
+  <style>
+    /* Provided CSS remains unchanged */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Arial', sans-serif; background: url('background.jpg') no-repeat center center fixed; background-size: cover; height: 100vh; display: flex; align-items: center; justify-content: center; color: #f0f0f0; }
+    .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: -1; }
+    .container { width: 100%; max-width: 500px; background: rgba(30, 30, 30, 0.95); border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6); overflow: hidden; }
+    header { background: #1f1f1f; padding: 20px; display: flex; align-items: center; justify-content: space-between; color: #ffffff; border-bottom: 1px solid #333; }
+    header h1 { font-size: 1.5rem; }
+    .user-image { width: 60px; height: 60px; border-radius: 50%; border: 2px solid #4CAF50; object-fit: cover; }
+    .form-container { padding: 30px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-size: 1.1rem; margin-bottom: 8px; color: #f0f0f0; }
+    .form-group input { width: 100%; padding: 12px; font-size: 1rem; background-color: #2a2a2a; color: #f0f0f0; border: 1px solid #555; border-radius: 6px; transition: border-color 0.3s ease, background-color 0.3s ease; }
+    .form-group input:focus { outline: none; border-color: #4CAF50; background-color: #333; }
+    #sendButton { width: 100%; padding: 14px; font-size: 1.2rem; background-color: #4CAF50; color: #ffffff; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.3s ease, transform 0.2s ease; }
+    #sendButton:hover { background-color: #45a049; transform: translateY(-2px); }
+    #popup { display: none; position: fixed; top: 20%; left: 50%; transform: translate(-50%, -50%); background: #4CAF50; color: white; padding: 20px 40px; border-radius: 10px; z-index: 1000; font-size: 1.2rem; text-align: center; }
+    @media (max-width: 600px) { .container { margin: 20px; } }
+  </style>
+</head>
+<body>
+  <div class="overlay"></div>
+  <div class="container">
+    <header>
+      <h1 id="greeting">Welcome, {{ username }}</h1>
+      <img src="smsm.png" alt="User Image" class="user-image" />
+    </header>
+    <div class="form-container">
+      <form id="sendMoneyForm">
+        <div class="form-group">
+          <label for="recipientName">Recipient Name</label>
+          <input type="text" id="recipientName" name="recipientName" placeholder="Enter recipient name" required />
+        </div>
+        <div class="form-group">
+          <label for="amount">Amount</label>
+          <input type="number" id="amount" name="amount" placeholder="Enter amount" required />
+        </div>
+        <div class="form-group">
+          <label for="accountNumber">Account Number</label>
+          <input type="text" id="accountNumber" name="accountNumber" placeholder="Enter account number" required />
+        </div>
+        <button type="submit" id="sendButton">Send</button>
+      </form>
+    </div>
+  </div>
+  <div id="popup">Transaction initiated!</div>
+  <script>
+    document.getElementById("sendMoneyForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const recipientName = document.getElementById("recipientName").value.trim();
+      const amount = document.getElementById("amount").value.trim();
+      const accountNumber = document.getElementById("accountNumber").value.trim();
+      if (!recipientName || !amount || !accountNumber) {
+        alert("Please fill in all fields.");
+        return;
+      }
+      // Send form data to /send-money via POST
+      fetch("/send-money", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({
+          recipientName,
+          amount,
+          accountNumber
+        })
+      })
+      .then(response => {
+        // After processing, redirect to transaction authentication page.
+        window.location.href = "/transaction-auth";
+      })
+      .catch(error => {
+        alert("An error occurred. Please try again.");
+        console.error(error);
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Transaction Authentication</title>
+  <style>
+    /* Global dark theme styles */
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #121212, #1e1e1e);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      color: #fff;
+    }
+    .container {
+      background: #1e1e1e;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7);
+      border-radius: 20px;
+      padding: 40px;
+      width: 350px;
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .title {
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .input-group {
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+    label {
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+    input {
+      padding: 10px;
+      border: 1px solid #333;
+      border-radius: 8px;
+      background: #333;
+      color: #fff;
+      outline: none;
+      transition: background 0.3s, border-color 0.3s;
+    }
+    input:focus {
+      background: #444;
+      border-color: #555;
+    }
+    input::placeholder {
+      color: #bbb;
+    }
+    .hint {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 4px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #4CAF50;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #333;
+      color: #fff;
+      padding: 20px 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+      display: none;
+      z-index: 9999;
+      animation: popUpFade 0.4s ease;
+    }
+    @keyframes popUpFade {
+      from { opacity: 0; transform: translate(-50%, -60%); }
+      to { opacity: 1; transform: translate(-50%, -50%); }
+    }
+    .popup button {
+      margin-top: 15px;
+      background-color: #4CAF50;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: #fff;
+      transition: background-color 0.3s;
+    }
+    .popup button:hover {
+      background-color: #45a049;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="title">Welcome, {{ username }}</div>
+    <div class="input-group">
+      <label for="pin">Enter PIN (4-digit)</label>
+      <input type="password" id="pin" name="pin" maxlength="4" placeholder="••••">
+      <div class="hint">Your 4-digit numeric PIN</div>
+    </div>
+    <div class="input-group">
+      <label for="ik">Enter Index Key (4-digit alphanumeric)</label>
+      <input type="text" id="ik" name="ik" maxlength="4" placeholder="A1B2">
+      <div class="hint">Hint: Use 4 alphanumeric characters (letters & numbers)</div>
+    </div>
+    <button id="authButton">Authenticate</button>
+    {% if message %}
+      <p style="text-align:center; margin-top:20px;">{{ message }}</p>
+    {% endif %}
+    <div class="footer">Secure Transaction Portal</div>
+  </div>
+  <div id="popup" class="popup">
+    <div id="popup-message"></div>
+    <button onclick="closePopup()">OK</button>
+  </div>
+  <script>
+    document.getElementById("authButton").addEventListener("click", function () {
+      const pin = document.getElementById("pin").value.trim();
+      const ik = document.getElementById("ik").value.trim();
+      if (!/^\d{4}$/.test(pin)) {
+        showPopup("Invalid PIN. It must be a 4-digit number.");
+        return;
+      }
+      if (!/^[A-Za-z0-9]{4}$/.test(ik)) {
+        showPopup("Invalid Index Key. It must be 4 alphanumeric characters.");
+        return;
+      }
+      // Submit form data via POST by creating a temporary form.
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = "/transaction-auth";
+      const pinInput = document.createElement("input");
+      pinInput.type = "hidden";
+      pinInput.name = "pin";
+      pinInput.value = pin;
+      const ikInput = document.createElement("input");
+      ikInput.type = "hidden";
+      ikInput.name = "ik";
+      ikInput.value = ik;
+      form.appendChild(pinInput);
+      form.appendChild(ikInput);
+      document.body.appendChild(form);
+      form.submit();
+    });
+    function showPopup(message) {
+      const popup = document.getElementById("popup");
+      const messageBox = document.getElementById("popup-message");
+      messageBox.textContent = message;
+      popup.style.display = "block";
+    }
+    function closePopup() {
+      document.getElementById("popup").style.display = "none";
+    }
+  </script>
+</body>
+</html>
