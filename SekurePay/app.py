@@ -110,6 +110,28 @@ MAX_ATTEMPTS = 3
 LOCKOUT_TIME = 900  
 BACKOFF_MULTIPLIER = 10  
 
+def update_failed_attempt(ik):
+    conn = sqlite3.connect("encryption_store.db")
+    cursor = conn.cursor()
+    current_time = int(time.time())
+    cursor.execute("SELECT attempts FROM FailedAttempts WHERE ik = ?", (ik,))
+    result = cursor.fetchone()
+    if result:
+        attempts = result[0] + 1
+        cursor.execute(
+            "UPDATE FailedAttempts SET attempts = ?, last_attempt_time = ? WHERE ik = ?",
+            (attempts, current_time, ik)
+        )
+    else:
+        attempts = 1
+        cursor.execute(
+            "INSERT INTO FailedAttempts (ik, attempts, last_attempt_time) VALUES (?, ?, ?)",
+            (ik, attempts, current_time)
+        )
+    conn.commit()
+    conn.close()
+
+
 def check_brute_force(ik):
     conn = sqlite3.connect("encryption_store.db")
     cursor = conn.cursor()
@@ -150,11 +172,6 @@ def decrypt_Nk(sk: str, encrypted_Nk: str) -> str:
         raise ValueError("Incorrect Sk: Unable to decrypt Nk")
 
 def fetch_and_decrypt_Nk(ik: int, sk: str) -> str:
-    """
-    Checks for brute force, fetches the stored encrypted data (Enk) by ik,
-    decrypts it using a fingerprint-derived key to retrieve Nk,
-    and then uses Sk to decrypt Nk and recover the private key (Pk).
-    """
     check_brute_force(ik)
     
     conn = sqlite3.connect("encryption_store.db")
@@ -173,8 +190,15 @@ def fetch_and_decrypt_Nk(ik: int, sk: str) -> str:
     cipher = Cipher(algorithms.AES(key), modes.GCM(iv, tag))
     decryptor = cipher.decryptor()
     Nk = decryptor.update(ciphertext) + decryptor.finalize()
+    
+    try:
+        # Attempt to decrypt Nk using the provided sk to recover pk
+        return decrypt_Nk(sk, Nk.decode())
+    except Exception as e:
+        # If decryption fails, update failed attempts and then raise an error
+        update_failed_attempt(ik)
+        raise e
 
-    return decrypt_Nk(sk, Nk.decode())
 
 # ---------------------------
 # Flask Application Endpoints
